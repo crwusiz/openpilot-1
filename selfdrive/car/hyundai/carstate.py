@@ -281,6 +281,12 @@ class CarState(CarStateBase):
       ("Navi_SCC_Camera_Act", "SCC11", 0),
       ("Navi_SCC_Camera_Status", "SCC11", 2),
 
+      ("UNIT", "TPMS11", 0),
+      ("PRESSURE_FL", "TPMS11", 0),
+      ("PRESSURE_FR", "TPMS11", 0),
+      ("PRESSURE_RL", "TPMS11", 0),
+      ("PRESSURE_RR", "TPMS11", 0),
+      
       ("ACCMode", "SCC12", 0),
       ("CF_VSM_Prefill", "SCC12", 0),
       ("CF_VSM_DecCmdAct", "SCC12", 0),
