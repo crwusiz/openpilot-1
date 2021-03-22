@@ -19,11 +19,14 @@ class CarState(CarStateBase):
     self.leftBlinker = False
     self.rightBlinker = False
     self.lkas_button_on = True
-    self.has_scc13 = CP.carFingerprint in FEATURES["has_scc13"]
-    self.has_scc14 = CP.carFingerprint in FEATURES["has_scc14"]
     self.cruise_main_button = 0
     self.mdps_error_cnt = 0
     self.spas_enabled = CP.spasEnabled
+    
+    #Features set
+    self.has_scc13 = CP.carFingerprint in FEATURES["has_scc13"]
+    self.has_scc14 = CP.carFingerprint in FEATURES["has_scc14"]
+    self.not_lkas = CP.carFingerprint in FEATURES["not_lkas"]
 
   def update(self, cp, cp2, cp_cam):
     cp_mdps = cp2 if self.mdps_bus else cp
@@ -202,8 +205,7 @@ class CarState(CarStateBase):
       self.mdps11_stat = cp_mdps.vl["MDPS11"]["CF_Mdps_Stat"]
 
     self.lkas_error = cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"] == 7
-    if not self.lkas_error and self.car_fingerprint not in [CAR.SONATA,CAR.PALISADE,
-                    CAR.SONATA_HEV, CAR.SANTA_FE, CAR.KONA_EV, CAR.NIRO_EV, CAR.KONA]:
+    if not self.lkas_error and not self.not_lkas:
       self.lkas_button_on = bool(cp_cam.vl["LKAS11"]["CF_Lkas_LdwsSysState"])
 
     return ret
@@ -402,7 +404,7 @@ class CarState(CarStateBase):
       if not CP.openpilotLongitudinalControl:
         checks += [("FCA11", 50)]
 
-    if CP.carFingerprint in [CAR.SANTA_FE]:
+    if CP.carFingerprint in FEATURES["tcs_remove"]:
       checks.remove(("TCS13", 50))
     if CP.spasEnabled:
       if CP.mdpsBus == 1:
