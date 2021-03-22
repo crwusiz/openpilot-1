@@ -95,7 +95,7 @@ class CarState(CarStateBase):
     # TODO: Check this
     ret.brakeLights = bool(cp.vl["TCS13"]['BrakeLight'] or ret.brakePressed)
 
-    if self.CP.carFingerprint in FEATURES["use_elect_ems"]:
+    if self.CP.carFingerprint in FEATURES["use_elect_ems_gears"]:
       ret.gas = cp.vl["E_EMS11"]['Accel_Pedal_Pos'] / 256.
       ret.gasPressed = ret.gas > 5
     else:
@@ -145,7 +145,7 @@ class CarState(CarStateBase):
       else:
         ret.gearShifter = GearShifter.unknown
     # Gear Selecton - This is only compatible with optima hybrid 2017
-    elif self.CP.carFingerprint in FEATURES["use_elect_gears"]:
+    elif self.CP.carFingerprint in FEATURES["use_elect_ems_gears"]:
       gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
       if gear in (5, 8):  # 5: D, 8: sport mode
         ret.gearShifter = GearShifter.drive
@@ -370,7 +370,7 @@ class CarState(CarStateBase):
       signals += [
         ("CUR_GR", "TCU12",0),
       ]
-    elif CP.carFingerprint in FEATURES["use_elect_gears"]:
+    elif CP.carFingerprint in FEATURES["use_elect_ems_gears"]:
       signals += [
         ("Elect_Gear_Shifter", "ELECT_GEAR", 0),
     ]
@@ -378,7 +378,7 @@ class CarState(CarStateBase):
       signals += [
         ("CF_Lvr_Gear","LVR12",0),
       ]
-    if CP.carFingerprint not in FEATURES["use_elect_ems"]:
+    if CP.carFingerprint not in FEATURES["use_elect_ems_gears"]:
       signals += [
         ("PV_AV_CAN", "EMS12", 0),
         ("CF_Ems_AclAct", "EMS16", 0),
