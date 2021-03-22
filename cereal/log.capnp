@@ -527,6 +527,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   lateralControlLqr  @62 :UInt8;
   vEgo @63 :Float32;
   vEgoRaw @64 :Float32;  
+  steerOverride @65 :Bool;
 
   lateralControlState :union {
     indiState @52 :LateralINDIState;
