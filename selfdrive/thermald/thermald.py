@@ -47,6 +47,7 @@ def read_tz(x):
   except FileNotFoundError:
     return 0
 
+prebuiltfile = '/data/openpilot/prebuilt'
 
 def read_thermal(thermal_config):
   dat = messaging.new_message('deviceState')
