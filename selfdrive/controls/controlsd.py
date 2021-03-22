@@ -23,7 +23,7 @@ from selfdrive.controls.lib.longitudinal_planner import LON_MPC_STEP
 from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.hardware import HARDWARE, TICI
 
-LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
+LDW_MIN_SPEED = 40 * CV.KPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
@@ -102,12 +102,18 @@ class Controls:
     self.LoC = LongControl(self.CP, self.CI.compute_gb)
     self.VM = VehicleModel(self.CP)
 
+    self.lateral_control_pid = 0
+    self.lateral_control_indi = 0
+    self.lateral_control_lqr = 0
     if self.CP.lateralTuning.which() == 'pid':
       self.LaC = LatControlPID(self.CP)
+      self.lateral_control_pid = 1
     elif self.CP.lateralTuning.which() == 'indi':
       self.LaC = LatControlINDI(self.CP)
+      self.lateral_control_indi = 1
     elif self.CP.lateralTuning.which() == 'lqr':
       self.LaC = LatControlLQR(self.CP)
+      self.lateral_control_lqr = 1
 
     self.state = State.disabled
     self.enabled = False
@@ -237,12 +243,12 @@ class Controls:
 
     # TODO: fix simulator
     if not SIMULATION:
-      if not NOSENSOR and not white_panda:
-        if not self.sm.alive['ubloxRaw'] and (self.sm.frame > 10. / DT_CTRL):
-          self.events.add(EventName.gpsMalfunction)
-        elif not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and not TICI:
+#      if not NOSENSOR and not white_panda:
+#        if not self.sm.alive['ubloxRaw'] and (self.sm.frame > 10. / DT_CTRL):
+#          self.events.add(EventName.gpsMalfunction)
+#        elif not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and not TICI:
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
-          self.events.add(EventName.noGps)
+#          self.events.add(EventName.noGps)
       if not self.sm.all_alive(['roadCameraState', 'driverCameraState']) and (self.sm.frame > 5 / DT_CTRL):
         self.events.add(EventName.cameraMalfunction)
       if self.sm['modelV2'].frameDropPerc > 20:
@@ -492,7 +498,10 @@ class Controls:
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['lateralPlan']
     controlsState.enabled = self.enabled
     controlsState.active = self.active
+    controlsState.vEgo = CS.vEgo
+    controlsState.vEgoRaw = CS.vEgoRaw
     controlsState.curvature = self.VM.calc_curvature(steer_angle_rad, CS.vEgo)
+    controlsState.steerOverride = CS.steeringPressed
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
@@ -501,6 +510,8 @@ class Controls:
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
+    controlsState.angleSteers = CS.steeringAngleDeg
+    controlsState.angleSteersDes = float(self.LaC.angle_steers_des)
     controlsState.steeringAngleDesiredDeg = float(self.LaC.angle_steers_des)
     controlsState.vTargetLead = float(v_acc)
     controlsState.aTarget = float(a_acc)
@@ -508,6 +519,9 @@ class Controls:
     controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_error_counter
+    controlsState.lateralControlPid = self.lateral_control_pid
+    controlsState.lateralControlIndi = self.lateral_control_indi
+    controlsState.lateralControlLqr = self.lateral_control_lqr
 
     if self.CP.lateralTuning.which() == 'pid':
       controlsState.lateralControlState.pidState = lac_log

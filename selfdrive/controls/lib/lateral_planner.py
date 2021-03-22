@@ -15,10 +15,10 @@ from cereal import log
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 
-LOG_MPC = os.environ.get('LOG_MPC', False)
+LOG_MPC = os.environ.get('LOG_MPC', True)
 
-LANE_CHANGE_SPEED_MIN = 45 * CV.MPH_TO_MS
-LANE_CHANGE_TIME_MAX = 10.
+LANE_CHANGE_SPEED_MIN = 60 * CV.KPH_TO_MS
+LANE_CHANGE_TIME_MAX = 5.
 
 DESIRES = {
   LaneChangeDirection.none: {
@@ -87,6 +87,17 @@ class LateralPlanner():
     active = sm['controlsState'].active
     steering_wheel_angle_offset_deg = sm['liveParameters'].angleOffsetDeg
     steering_wheel_angle_deg = sm['carState'].steeringAngleDeg
+
+    lateral_control_pid = sm['controlsState'].lateralControlPid
+    lateral_control_indi = sm['controlsState'].lateralControlIndi
+    lateral_control_lqr = sm['controlsState'].lateralControlLqr
+
+    if lateral_control_pid == 1:
+      output_scale = sm['controlsState'].lateralControlState.pidState.output
+    elif lateral_control_indi == 1:
+      output_scale = sm['controlsState'].lateralControlState.indiState.output
+    elif lateral_control_lqr == 1:
+      output_scale = sm['controlsState'].lateralControlState.lqrState.output
 
     # Update vehicle model
     x = max(sm['liveParameters'].stiffnessFactor, 0.1)
@@ -265,6 +276,7 @@ class LateralPlanner():
       dat.liveMpc.x = list(self.mpc_solution[0].x)
       dat.liveMpc.y = list(self.mpc_solution[0].y)
       dat.liveMpc.psi = list(self.mpc_solution[0].psi)
-      dat.liveMpc.tire_angle = list(self.mpc_solution[0].tire_angle)
+#      dat.liveMpc.tire_angle = list(self.mpc_solution[0].tire_angle)
+      dat.liveMpc.curvature = list(self.mpc_solution[0].curvature)
       dat.liveMpc.cost = self.mpc_solution[0].cost
       pm.send('liveMpc', dat)
